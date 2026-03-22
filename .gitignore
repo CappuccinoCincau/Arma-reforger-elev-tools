@@ -1,0 +1,19 @@
+# Created by venv; see https://docs.python.org/3/library/venv.html
+
+# Byte-code files
+*.pyc
+__pycache__/
+
+# Virtual environment
+venv/
+.venv/
+env/
+Lib/
+scripts/
+
+# IDE files (optional)
+.vscode/
+.idea/
+
+# Environment variables
+.env
