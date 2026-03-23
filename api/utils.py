@@ -24,23 +24,10 @@ def calculate_target_angle(x1, y1, x2, y2):
     return degrees_final, mills
 
 def calculate_elevation_by_coordinates(x1, y1, x2, y2, ballistic_data, elevation_difference_m):
-    # Calculate the difference in coordinates
-    delta_x = x2 - x1
-    delta_y = y2 - y1
-    
-    # Calculate the angle in radians using math.atan2(y, x)
-    theta = math.atan2(delta_x, delta_y)
-    degrees_bearing = math.degrees(theta)
-    degrees_final = (degrees_bearing + 360) % 360
-
-    # Calculate mills (1 degree is approximately 17.778 mills, 6400 mills in a circle)
-    # Note: Different military standards use different values for mills (e.g., 6400 or 6000).
-    # We will use 6400 mills for a full circle.
-    mills = degree_to_mills(degrees_final)
-
-    distance = math.dist((x1,y1),(x2,y2)) * 100
-    elevation_final = calculate_elevation(distance, ballistic_data, elevation_difference_m)
-    return  elevation_final, degrees_final, mills, distance
+    degrees, mills = calculate_target_angle(x1, y1, x2, y2)
+    distance = calculate_coordinate_distance(x1, y1, x2, y2)
+    elevation = calculate_elevation(distance, ballistic_data, elevation_difference_m)
+    return  elevation, degrees, mills, distance
 
 def calculate_elevation(distance_m, ballistic_data, elevation_difference_m):
     distances = sorted(ballistic_data.keys())
