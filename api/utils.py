@@ -1,5 +1,5 @@
 import math
-
+from ballistic_data import ballistic_data_info
 def degree_to_mills(degree):
     return degree * (6400 / 360)
 
@@ -23,6 +23,29 @@ def calculate_target_angle(x1, y1, x2, y2):
     mills = degree_to_mills(degrees_final)
     return degrees_final, mills
 
+# Get all existing balistic data that can be used to calculate
+def get_list_ballistic_data():
+    list_data = list(ballistic_data_info.keys())
+    available_type = []
+    for i, b_name in enumerate(list_data):        
+        range_list = ballistic_data_info[b_name].keys()
+        min_range = min(range_list)
+        max_range = max(range_list)
+        available_type.append(f"{i+1}. {b_name} " +" | Supported Range(m): "+f"{min_range}-{max_range}")
+    return available_type
+
+# Check ballistic type based on range to target
+def ballistic_availability_checker(distance_m):
+    list_data = list(ballistic_data_info.keys())
+    available_type = []
+    for i, b_name in enumerate(list_data):        
+        range_list = ballistic_data_info[b_name].keys()
+        min_range = min(range_list)
+        max_range = max(range_list)
+        if min_range <= distance_m <= max_range:
+            available_type.append(b_name)
+    return available_type
+    
 def calculate_elevation_by_coordinates(x1, y1, x2, y2, ballistic_data, elevation_difference_m):
     degrees, mills = calculate_target_angle(x1, y1, x2, y2)
     distance = calculate_coordinate_distance(x1, y1, x2, y2)
@@ -46,8 +69,7 @@ def calculate_elevation(distance_m, ballistic_data, elevation_difference_m):
                 # Formula: e1 + (e2 - e1) * (distance_m - d1) / (d2 - d1)
                 base_elev = e1 + (e2 - e1) * (distance_m - d1) / (d2 - d1)
                 break
-    
-    # 2. Adjust for elevation difference
+
     # A common approximation is 1 mil per meter of elevation difference over distance.
     # More precisely, use the formula found in some guides: (elevation difference / distance) * 1000.
     # This is an approximation and might need truing in-game.
