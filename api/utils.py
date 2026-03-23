@@ -1,14 +1,15 @@
 import math
 from ballistic_data import ballistic_data_info
 
+# Utils for calculating
 def _degree_to_mills(degree):
     return degree * (6400 / 360)
 
-def _calculate_coordinate_distance(x1, y1, x2, y2):
+def calculate_coordinate_distance(x1, y1, x2, y2):
     distance = math.dist((x1,y1),(x2,y2)) * 100
     return distance
 
-def _calculate_target_angle(x1, y1, x2, y2):
+def calculate_target_angle(x1, y1, x2, y2):
     # Calculate the difference in coordinates
     delta_x = x2 - x1
     delta_y = y2 - y1
@@ -24,6 +25,7 @@ def _calculate_target_angle(x1, y1, x2, y2):
     mills = _degree_to_mills(degrees_final)
     return degrees_final, mills
 
+# Public
 # Get all existing balistic data that can be used to calculate
 def get_list_ballistic_data():
     list_data = list(ballistic_data_info.keys())
@@ -48,8 +50,8 @@ def ballistic_availability_checker(distance_m):
     return available_type
     
 def calculate_elevation_by_coordinates(x1, y1, x2, y2, ballistic_data, elevation_difference_m):
-    degrees, mills = _calculate_target_angle(x1, y1, x2, y2)
-    distance = _calculate_coordinate_distance(x1, y1, x2, y2)
+    degrees, mills = calculate_target_angle(x1, y1, x2, y2)
+    distance = calculate_coordinate_distance(x1, y1, x2, y2)
     elevation = calculate_elevation(distance, ballistic_data, elevation_difference_m)
     return  elevation, degrees, mills, distance
 
