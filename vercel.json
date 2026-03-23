@@ -4,5 +4,6 @@
   ],
   "routes": [
     { "src": "/main/elev_calculator_discord_bot", "dest": "main/elev_calculator_discord_bot" },
+    { "src": "/",            "dest": "main/index.py"   }
   ]
 }
