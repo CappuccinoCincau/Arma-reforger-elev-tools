@@ -17,3 +17,5 @@ scripts/
 
 # Environment variables
 .env
+
+.pyvenv.cfg
