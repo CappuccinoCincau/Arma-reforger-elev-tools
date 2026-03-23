@@ -3,7 +3,7 @@ import math
 def degree_to_mills(degree):
     return degree * (6400 / 360)
 
-def calculate_position_angle(x1, y1, x2, y2):
+def calculate_elevation_by_coordinates(x1, y1, x2, y2, ballistic_data, elevation_difference_m):
     # Calculate the difference in coordinates
     delta_x = x2 - x1
     delta_y = y2 - y1
@@ -19,8 +19,8 @@ def calculate_position_angle(x1, y1, x2, y2):
     mills = degree_to_mills(degrees_final)
 
     distance = math.dist((x1,y1),(x2,y2)) * 100
-
-    return degrees_final, mills, distance
+    elevation_final = calculate_elevation(distance, ballistic_data, elevation_difference_m)
+    return  elevation_final, degrees_final, mills, distance
 
 def calculate_elevation(distance_m, ballistic_data, elevation_difference_m):
     distances = sorted(ballistic_data.keys())

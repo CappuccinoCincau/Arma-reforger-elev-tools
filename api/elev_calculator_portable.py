@@ -87,16 +87,11 @@ def main():
             break
         elif measurement_method.lower() == "n":
             x1,y1,x2,y2 = get_coordinates()
-            degrees_angle, mills_angle, range_to_target = calculate_position_angle(x1, y1, x2, y2)
-            if ballistic_min_range <= range_to_target <= ballistic_max_range:
-                elevation_difference = get_elevation_input()
-                elevation_mils = calculate_elevation(range_to_target, ballistic_data, elevation_difference)
-                print("Coordinates: " + Colors.YELLOW + f"({x1}, {y1})" + Colors.ENDC + " to " + Colors.YELLOW + f"({x2}, {y2})" + Colors.ENDC)
-                print(f"Degrees (Bearing from North): " + Colors.GREEN + f"{degrees_angle:.2f} °" + Colors.ENDC + f" | Mills: "+ Colors.GREEN + f"{mills_angle:.2f}" + Colors.ENDC)
-                break
-            else:
-                print(f"Invalid Range Please Select Another Charge! Calculated range: {range_to_target:.2f}\n")
-                main()
+            elevation_difference = get_elevation_input()            
+            elevation_mils, degrees_angle, mills_angle, range_to_target = calculate_elevation_by_coordinates(x1, y1, x2, y2, ballistic_data, elevation_difference)                
+            print("Coordinates: " + Colors.YELLOW + f"({x1}, {y1})" + Colors.ENDC + " to " + Colors.YELLOW + f"({x2}, {y2})" + Colors.ENDC)
+            print(f"Degrees (Bearing from North): " + Colors.GREEN + f"{degrees_angle:.2f} °" + Colors.ENDC + f" | Mills: "+ Colors.GREEN + f"{mills_angle:.2f}" + Colors.ENDC)
+            break
         else:
             print("Invalid input. Please try again.")
 
