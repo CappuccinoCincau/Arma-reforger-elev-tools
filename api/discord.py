@@ -1,21 +1,24 @@
 import nacl.signing
 import nacl.exceptions
 from http.server import BaseHTTPRequestHandler
-import json, os, re, requests, time
+from enum import IntEnum
+import json, os
 
-import os, json
-import nacl
-PUBLIC_KEY          = os.environ["DISCORD_PUBLIC_KEY"]
-DISCORD_API_BASE    = "https://discord.com/api/v10"
+from utils import (
+    calculate_elevation_by_coordinates,
+    calculate_elevation
+)
+
+PUBLIC_KEY = os.environ["DISCORD_PUBLIC_KEY"]
 
 def verify_key(body: bytes, sig: str, timestamp: str, public_key: str) -> bool:
-    """Return True if the Ed25519 signature is valid for the given body."""
     try:
         verify_key = nacl.signing.VerifyKey(bytes.fromhex(public_key))
         verify_key.verify(f"{timestamp}".encode() + body, bytes.fromhex(sig))
         return True
     except (nacl.exceptions.BadSignatureError, ValueError):
         return False
+
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -25,52 +28,100 @@ class handler(BaseHTTPRequestHandler):
             body = self.rfile.read(int(self.headers["Content-Length"]))
 
             if not verify_key(body, sig, ts, PUBLIC_KEY):
-                self.send_error(401, "bad signature"); return
+                self.send_error(401, "bad signature")
+                return
 
             payload = json.loads(body)
 
-            # 1️⃣ Ping check
+            # 1. Ping
             if payload.get("type") == InteractionType.PING:
                 return self._json({"type": InteractionResponseType.PONG})
 
-            # 2️⃣ Slash command
+            # 2. Slash Commands
             if payload.get("type") == InteractionType.APPLICATION_COMMAND:
-                data     = payload["data"]
-                options  = data.get("options", [])
-                if data["name"] != "rsifind":
+                data = payload["data"]
+                command_name = data["name"]
+                options = data.get("options", [])
+
+                # Expecting single string input like: "x1,y1,x2,y2,..."
+                raw_input = options[0]["value"] if options else ""
+
+                try:
+                    values = [float(x.strip()) for x in raw_input.split(",")]
+                except:
+                    return self._msg("❌ Invalid input format. Use comma-separated numbers.")
+
+                # ===============================
+                # /calcPosAngle
+                # ===============================
+                if command_name == "calcposangle":
+                    if len(values) != 6:
+                        return self._msg("❌ Need 6 values: x1,y1,x2,y2,ballistic_data,elevation_diff")
+
+                    x1, y1, x2, y2, ballistic_data, elevation_diff = values
+
+                    # ⚠️ ballistic_data should be dict, but user gives float
+                    # You MUST define or load actual ballistic table here
+                    ballistic_table = {
+                        100: ballistic_data,
+                        200: ballistic_data + 10,
+                        300: ballistic_data + 20
+                    }
+
+                    elev, deg, mils, dist = calculate_elevation_by_coordinates(
+                        x1, y1, x2, y2, ballistic_table, elevation_diff
+                    )
+
+                    return self._embed({
+                        "title": "Calc Position + Angle",
+                        "fields": [
+                            {"name": "Distance (m)", "value": str(round(dist, 2)), "inline": True},
+                            {"name": "Direction (°)", "value": str(round(deg, 2)), "inline": True},
+                            {"name": "Direction (mils)", "value": str(round(mils, 2)), "inline": True},
+                            {"name": "Elevation (mils)", "value": str(elev), "inline": False},
+                        ]
+                    })
+
+                # ===============================
+                # /calcElev
+                # ===============================
+                elif command_name == "calcelev":
+                    if len(values) != 3:
+                        return self._msg("❌ Need 3 values: distance,ballistic_data,elevation_diff")
+
+                    distance, ballistic_data, elevation_diff = values
+
+                    ballistic_table = {
+                        100: ballistic_data,
+                        200: ballistic_data + 10,
+                        300: ballistic_data + 20
+                    }
+
+                    elev = calculate_elevation(
+                        distance, ballistic_table, elevation_diff
+                    )
+
+                    return self._embed({
+                        "title": "Calc Elevation",
+                        "fields": [
+                            {"name": "Distance (m)", "value": str(distance), "inline": True},
+                            {"name": "Elevation (mils)", "value": str(elev), "inline": True},
+                        ]
+                    })
+
+                else:
                     return self._msg("Unknown command.")
 
-                handle   = options[0]["value"] if options else ""
-                token    = payload["token"]
-                app_id   = payload["application_id"]
-
-                # Defer immediately (shows "Searching ...")
-                self._json({"type": InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE})
-
-                # your logic goes here
-
-            if payload.get("type") == InteractionType.MESSAGE_COMPONENT:
-                # your additional logic to handle component interaction goes here
-
-                # Only if you need to Send an ephemeral response to acknowledge
-                return self._json({
-                    "type": InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-                    "data": {
-                        "content": f"Thanks for being a Good Sport! your feedback has been recorded.",
-                        "flags": 64  # ephemeral message
-                    }
-                })
-
-            # Unknown type
             self.send_error(400, "unknown interaction")
 
         except Exception as e:
             print("🔥 Exception:", e)
-            self._msg("❌ Oops! Something bad happened. Please try again.")
+            self._msg("❌ Internal error occurred.")
 
-    # -------------------------------------------------------------------------
+    # =============================
     # Helpers
-    # -------------------------------------------------------------------------
+    # =============================
+
     def _json(self, obj, status=200):
         out = json.dumps(obj).encode()
         self.send_response(status)
@@ -85,8 +136,18 @@ class handler(BaseHTTPRequestHandler):
             "data": {"content": text}
         })
 
+    def _embed(self, embed):
+        return self._json({
+            "type": InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            "data": {
+                "embeds": [embed]
+            }
+        })
 
-# ------------- Interaction / Response enums -----------------------
+
+# =============================
+# Enums
+# =============================
 
 class InteractionType(IntEnum):
     PING = 1
