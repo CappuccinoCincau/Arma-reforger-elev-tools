@@ -27,14 +27,14 @@ class handler(BaseHTTPRequestHandler):
             ts   = self.headers.get("X-Signature-Timestamp")
             body = self.rfile.read(int(self.headers["Content-Length"]))
 
-#             if not verify_key(body, sig, ts, PUBLIC_KEY):
-#                 self.send_error(401, "bad signature")
-#                 return
+            if not verify_key(body, sig, ts, PUBLIC_KEY):
+                self.send_error(401, "bad signature")
+                return
 
             payload = json.loads(body)
 
             # 1. Ping
-            if payload.get("type") == InteractionType.PING:
+            if payload.get("type") == 1:
                 return self._json({"type": InteractionResponseType.PONG})
 
             # 2. Slash Commands
