@@ -3,6 +3,7 @@
     { "src": "main/*.py", "use": "@vercel/python" }
   ],
   "routes": [
-    { "src": "/main/elev_calculator_discord_bot", "dest": "main/elev_calculator_discord_bot" },
+    { "src": "/main/elev_calculator_discord_bot", "dest": "main/elev_calculator_discord_bot.py" },
+    { "src": "/",            "dest": "main/index.py"   }
   ]
 }
