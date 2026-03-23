@@ -27,9 +27,9 @@ class handler(BaseHTTPRequestHandler):
             ts   = self.headers.get("X-Signature-Timestamp")
             body = self.rfile.read(int(self.headers["Content-Length"]))
 
-            if not verify_key(body, sig, ts, PUBLIC_KEY):
-                self.send_error(401, "bad signature")
-                return
+#             if not verify_key(body, sig, ts, PUBLIC_KEY):
+#                 self.send_error(401, "bad signature")
+#                 return
 
             payload = json.loads(body)
 
